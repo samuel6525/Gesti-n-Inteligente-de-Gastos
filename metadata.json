@@ -1,0 +1,5 @@
+{
+  "name": "Generador de Plantillas de Gastos",
+  "description": "Una aplicación web para crear y gestionar informes de gastos de empleados con cálculos automáticos, categorías y exportación a CSV. Diseñada para simplificar el seguimiento y la presentación de gastos.",
+  "requestFramePermissions": []
+}
