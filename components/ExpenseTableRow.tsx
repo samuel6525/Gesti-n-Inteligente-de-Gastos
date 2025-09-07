@@ -3,6 +3,7 @@ import { Expense, ExpenseCategory, ExpenseStatus, Receipt } from '../types';
 import { EXPENSE_CATEGORIES, CATEGORY_ICONS } from '../constants';
 import { TrashIcon, CheckCircleIcon, XCircleIcon, PaperclipIcon } from './icons';
 import DatePicker from './DatePicker';
+import { useI18n } from '../context/i18n';
 
 const usePrevious = <T,>(value: T): T | undefined => {
     const ref = useRef<T | undefined>(undefined);
@@ -17,14 +18,14 @@ interface ExpenseTableRowProps {
     expense: Expense;
     isSelected: boolean;
     isNew: boolean;
-    onUpdateExpense: (id: string, field: keyof Expense, value: string | number | ExpenseCategory | ExpenseStatus | Receipt | undefined) => void;
+    onUpdateExpense: (id: string, field: keyof Expense, value: string | number | ExpenseCategory | ExpenseStatus | Receipt | undefined | null) => void;
     onRequestDelete: (id: string) => void;
     onToggleSelect: (id: string) => void;
-    showNotification: (message: string, type: 'success' | 'error') => void;
+    showNotification: (messageKey: string, type: 'success' | 'error') => void;
 }
 
 const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, isNew, onUpdateExpense, onRequestDelete, onToggleSelect, showNotification }) => {
-    
+    const { t } = useI18n();
     const [isJustApproved, setIsJustApproved] = useState(false);
     const prevStatus = usePrevious(expense.status);
     const fileInputRef = useRef<HTMLInputElement>(null);
@@ -39,7 +40,15 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
-        const finalValue = name === 'amount' ? parseFloat(value) || 0 : value;
+        
+        let finalValue: string | number | null = value;
+        if (name === 'amount') {
+            finalValue = parseFloat(value) || 0;
+        }
+        if (name === 'otherCategoryDetail' && value === '') {
+            finalValue = null;
+        }
+
         onUpdateExpense(expense.id, name as keyof Expense, finalValue);
     };
 
@@ -55,18 +64,18 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
         const file = e.target.files?.[0];
         if (!file) return;
 
-        e.target.value = ''; // Reset input to allow re-uploading the same file
+        e.target.value = '';
 
         const MAX_SIZE = 5 * 1024 * 1024; // 5MB
         const ALLOWED_TYPES = ['image/jpeg', 'image/png', 'application/pdf'];
 
         if (file.size > MAX_SIZE) {
-            showNotification('El archivo supera el tamaño máximo de 5MB.', 'error');
+            showNotification('notifications.fileSizeError', 'error');
             return;
         }
 
         if (!ALLOWED_TYPES.includes(file.type)) {
-            showNotification('Formato no permitido. Use JPG, PNG o PDF.', 'error');
+            showNotification('notifications.fileTypeError', 'error');
             return;
         }
 
@@ -80,7 +89,7 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
             onUpdateExpense(expense.id, 'receipt', newReceipt);
         };
         reader.onerror = () => {
-            showNotification('Error al leer el archivo.', 'error');
+            showNotification('notifications.fileReadError', 'error');
         };
         reader.readAsDataURL(file);
     };
@@ -94,15 +103,15 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
     const isDescriptionInvalid = expense.description.trim() === '';
     const isAmountInvalid = expense.amount <= 0;
 
-    let rowClasses = `border-b border-gray-200 transition-colors`;
+    let rowClasses = `border-b border-gray-200 dark:border-gray-700 transition-colors`;
     if (isSelected) {
-        rowClasses += ' bg-blue-50';
+        rowClasses += ' bg-blue-50 dark:bg-blue-900/20';
     } else if (expense.status === ExpenseStatus.APROBADO) {
-        rowClasses += ' bg-green-50/70';
+        rowClasses += ' bg-green-50/70 dark:bg-green-900/20';
     } else if (expense.status === ExpenseStatus.RECHAZADO) {
-        rowClasses += ' bg-red-50/70';
+        rowClasses += ' bg-red-50/70 dark:bg-red-900/20';
     } else {
-        rowClasses += ' hover:bg-gray-50';
+        rowClasses += ' hover:bg-gray-50 dark:hover:bg-gray-700/50';
     }
     if (isNew) {
         rowClasses += ' animate-row-in';
@@ -117,10 +126,10 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
             <td className="py-5 px-3 w-12 text-center">
                 <input
                     type="checkbox"
-                    className="h-4 w-4 rounded border-gray-300 text-kimi-green focus:ring-kimi-green"
+                    className="h-4 w-4 rounded border-gray-300 dark:border-gray-600 text-kimi-green focus:ring-kimi-green dark:bg-gray-700 dark:checked:bg-kimi-green"
                     checked={isSelected}
                     onChange={() => onToggleSelect(expense.id)}
-                    aria-label={`Seleccionar gasto: ${expense.description}`}
+                    aria-label={t('table.selectExpenseAria', { description: expense.description })}
                 />
             </td>
             <td className="py-5 px-3">
@@ -133,10 +142,10 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
                 <input
                     type="text"
                     name="description"
-                    placeholder="Ej. Cena con cliente"
+                    placeholder={t('table.descriptionPlaceholder')}
                     value={expense.description}
                     onChange={handleInputChange}
-                    className={`w-full p-2 bg-white border rounded-md focus:ring-2 focus:border-transparent text-sm text-gray-900 ${isDescriptionInvalid ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-kimi-green'}`}
+                    className={`w-full p-2 bg-white dark:bg-gray-700 border rounded-md focus:ring-2 focus:border-transparent text-sm text-gray-900 dark:text-gray-100 ${isDescriptionInvalid ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-kimi-green'}`}
                 />
             </td>
             <td className="py-5 px-3">
@@ -144,21 +153,41 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
                     name="category"
                     value={expense.category}
                     onChange={handleInputChange}
-                    className="w-full p-2 bg-white border border-gray-300 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent text-sm text-gray-900"
+                    className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
                 >
-                    {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{CATEGORY_ICONS[cat]} {cat}</option>)}
+                    {EXPENSE_CATEGORIES.map(cat => <option key={cat} value={cat}>{CATEGORY_ICONS[cat]} {t(`categories.${cat}`)}</option>)}
                 </select>
+                {expense.category === ExpenseCategory.OTROS && (
+                    <input
+                        type="text"
+                        name="otherCategoryDetail"
+                        placeholder={t('table.specifyPlaceholder')}
+                        value={expense.otherCategoryDetail || ''}
+                        onChange={handleInputChange}
+                        className="w-full p-2 mt-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
+                    />
+                )}
+            </td>
+            <td className="py-5 px-3">
+                 <input
+                    type="text"
+                    name="invoiceNumber"
+                    placeholder={t('table.invoiceNumberPlaceholder')}
+                    value={expense.invoiceNumber || ''}
+                    onChange={handleInputChange}
+                    className="w-full p-2 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent text-sm text-gray-900 dark:text-gray-100"
+                />
             </td>
             <td className="py-5 px-3">
                 <div className="relative">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500">$</span>
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-500 dark:text-gray-400">$</span>
                     <input
                         type="number"
                         name="amount"
                         placeholder="0.00"
                         value={expense.amount}
                         onChange={handleInputChange}
-                        className={`w-full p-2 pl-7 bg-white border rounded-md focus:ring-2 focus:border-transparent text-sm text-gray-900 ${isAmountInvalid ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 focus:ring-kimi-green'}`}
+                        className={`w-full p-2 pl-7 bg-white dark:bg-gray-700 border rounded-md focus:ring-2 focus:border-transparent text-sm text-gray-900 dark:text-gray-100 ${isAmountInvalid ? 'border-red-400 focus:ring-red-500' : 'border-gray-300 dark:border-gray-600 focus:ring-kimi-green'}`}
                         min="0"
                         step="0.01"
                     />
@@ -166,16 +195,16 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
             </td>
              <td className="py-5 px-3">
                 {expense.status === ExpenseStatus.APROBADO ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800">
-                        <CheckCircleIcon className="mr-1.5" /> Aprobado
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-green-100 text-green-800 dark:bg-green-900/50 dark:text-green-300">
+                        <CheckCircleIcon className="mr-1.5" /> {t('statuses.Aprobado')}
                     </span>
                 ) : expense.status === ExpenseStatus.RECHAZADO ? (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800">
-                        <XCircleIcon className="mr-1.5" /> Rechazado
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-red-100 text-red-800 dark:bg-red-900/50 dark:text-red-300">
+                        <XCircleIcon className="mr-1.5" /> {t('statuses.Rechazado')}
                     </span>
                 ) : (
-                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800">
-                        Pendiente
+                    <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-semibold bg-yellow-100 text-yellow-800 dark:bg-yellow-900/50 dark:text-yellow-300">
+                        {t('statuses.Pendiente')}
                     </span>
                 )}
             </td>
@@ -193,7 +222,7 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
                             href={expense.receipt.data}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-kimi-green hover:underline truncate max-w-[120px]"
+                            className="text-kimi-green dark:text-green-400 hover:underline truncate max-w-[120px]"
                             title={expense.receipt.name}
                         >
                             <PaperclipIcon className="inline h-4 w-4 mr-1 flex-shrink-0"/>
@@ -201,8 +230,8 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
                         </a>
                         <button
                             onClick={handleRemoveReceipt}
-                            className="text-gray-400 hover:text-red-500 ml-2 p-1 rounded-full hover:bg-red-100 flex-shrink-0"
-                            aria-label="Eliminar factura"
+                            className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 ml-2 p-1 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30 flex-shrink-0"
+                            aria-label={t('table.removeReceiptAria')}
                         >
                             <TrashIcon className="h-4 w-4"/>
                         </button>
@@ -210,18 +239,18 @@ const ExpenseTableRow: React.FC<ExpenseTableRowProps> = ({ expense, isSelected, 
                 ) : (
                     <button
                         onClick={handleAttachClick}
-                        className="flex items-center text-sm text-kimi-green hover:text-kimi-green-dark font-semibold"
+                        className="flex items-center text-sm text-kimi-green dark:text-green-400 hover:text-kimi-green-dark dark:hover:text-green-300 font-semibold"
                     >
                         <PaperclipIcon className="mr-1 h-4 w-4" />
-                        Adjuntar
+                        {t('table.attach')}
                     </button>
                 )}
             </td>
             <td className="py-5 px-3 text-center">
                 <button 
                     onClick={() => onRequestDelete(expense.id)}
-                    className="text-gray-400 hover:text-red-500 transition-colors p-2 rounded-full hover:bg-red-100"
-                    aria-label="Eliminar gasto"
+                    className="text-gray-400 dark:text-gray-500 hover:text-red-500 dark:hover:text-red-400 transition-colors p-2 rounded-full hover:bg-red-100 dark:hover:bg-red-900/30"
+                    aria-label={t('table.deleteExpenseAria')}
                 >
                     <TrashIcon />
                 </button>

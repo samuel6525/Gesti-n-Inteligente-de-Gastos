@@ -1,8 +1,10 @@
+
 import React from 'react';
 import { CheckCircleIcon, ExclamationCircleIcon } from './icons';
+import { useI18n } from '../context/i18n';
 
 interface ToastProps {
-  message: string;
+  messageKey: string;
   type: 'success' | 'error';
   show: boolean;
 }
@@ -18,7 +20,9 @@ const toastConfig = {
   },
 };
 
-const Toast: React.FC<ToastProps> = ({ message, type, show }) => {
+const Toast: React.FC<ToastProps> = ({ messageKey, type, show }) => {
+  const { t } = useI18n();
+  
   if (!show) return null;
 
   const config = toastConfig[type];
@@ -30,7 +34,7 @@ const Toast: React.FC<ToastProps> = ({ message, type, show }) => {
       aria-live="assertive"
     >
       {config.icon}
-      <p>{message}</p>
+      <p>{t(messageKey)}</p>
     </div>
   );
 };

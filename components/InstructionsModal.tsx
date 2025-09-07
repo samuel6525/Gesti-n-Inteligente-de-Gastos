@@ -11,16 +11,16 @@ interface InstructionsModalProps {
 const InstructionsModal: React.FC<InstructionsModalProps> = ({ isOpen, onClose }) => {
   return (
     <Modal isOpen={isOpen} onClose={onClose}>
-      <div className="bg-white rounded-lg shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative">
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow-2xl max-w-2xl w-full p-6 sm:p-8 relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300 transition-colors"
           aria-label="Cerrar"
         >
           <CloseIcon />
         </button>
-        <h2 className="text-2xl font-bold text-gray-800 mb-4">Guía de Usuario</h2>
-        <div className="text-gray-600 space-y-4">
+        <h2 className="text-2xl font-bold text-gray-800 dark:text-gray-100 mb-4">Guía de Usuario</h2>
+        <div className="text-gray-600 dark:text-gray-300 space-y-4">
           <p>
             Bienvenido al Generador de Plantillas de Gastos. Siga estos pasos para crear su informe de manera eficaz:
           </p>

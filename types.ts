@@ -27,4 +27,6 @@ export interface Expense {
   category: ExpenseCategory;
   status: ExpenseStatus;
   receipt?: Receipt;
+  otherCategoryDetail?: string;
+  invoiceNumber?: string;
 }

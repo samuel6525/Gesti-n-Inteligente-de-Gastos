@@ -1,5 +1,7 @@
+
 import React, { useState, useRef, useEffect, useMemo } from 'react';
 import { CalendarIcon } from './icons';
+import { useI18n } from '../context/i18n';
 
 const useOnClickOutside = (ref: React.RefObject<HTMLDivElement>, handler: (event: MouseEvent | TouchEvent) => void) => {
   useEffect(() => {
@@ -25,6 +27,7 @@ interface DatePickerProps {
 
 const DatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange }) => {
   const [isOpen, setIsOpen] = useState(false);
+  const { locale } = useI18n();
   const initialDate = selectedDate ? new Date(`${selectedDate}T00:00:00`) : new Date();
   const [displayDate, setDisplayDate] = useState(initialDate);
 
@@ -36,7 +39,12 @@ const DatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange }) => {
     setDisplayDate(newDate);
   }, [selectedDate, isOpen]);
 
-  const daysOfWeek = ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+  const daysOfWeek = useMemo(() => {
+    if (locale === 'es') {
+        return ['Do', 'Lu', 'Ma', 'Mi', 'Ju', 'Vi', 'Sá'];
+    }
+    return ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
+  }, [locale]);
 
   const handlePrevMonth = () => {
     setDisplayDate(new Date(displayDate.getFullYear(), displayDate.getMonth() - 1, 1));
@@ -84,7 +92,7 @@ const DatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange }) => {
                 value={selectedDate}
                 onFocus={() => setIsOpen(true)}
                 readOnly
-                className="w-full p-2 pl-3 pr-10 border border-gray-300 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent cursor-pointer text-sm text-gray-900"
+                className="w-full p-2 pl-3 pr-10 bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-2 focus:ring-kimi-green focus:border-transparent cursor-pointer text-sm text-gray-900 dark:text-gray-100"
                 aria-label="Seleccionar fecha"
             />
             <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
@@ -93,19 +101,19 @@ const DatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange }) => {
         </div>
 
       {isOpen && (
-        <div className="absolute z-10 mt-1 w-72 bg-white rounded-lg shadow-lg p-2.5 border border-gray-200" role="dialog" aria-modal="true" aria-labelledby="calendar-heading">
+        <div className="absolute z-10 mt-1 w-72 bg-white dark:bg-gray-800 rounded-lg shadow-lg p-2.5 border border-gray-200 dark:border-gray-700" role="dialog" aria-modal="true" aria-labelledby="calendar-heading">
           <div className="flex items-center justify-between mb-2">
-            <button onClick={handlePrevMonth} type="button" className="p-2 rounded-full hover:bg-gray-100" aria-label="Mes anterior">
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            <button onClick={handlePrevMonth} type="button" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Mes anterior">
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
             </button>
-            <h3 id="calendar-heading" className="text-sm font-semibold text-gray-700 capitalize" aria-live="polite">
-              {displayDate.toLocaleString('es-ES', { month: 'long', year: 'numeric' })}
+            <h3 id="calendar-heading" className="text-sm font-semibold text-gray-700 dark:text-gray-200 capitalize" aria-live="polite">
+              {displayDate.toLocaleString(locale, { month: 'long', year: 'numeric' })}
             </h3>
-            <button onClick={handleNextMonth} type="button" className="p-2 rounded-full hover:bg-gray-100" aria-label="Mes siguiente">
-                <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            <button onClick={handleNextMonth} type="button" className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700" aria-label="Mes siguiente">
+                <svg className="w-5 h-5 text-gray-600 dark:text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
             </button>
           </div>
-          <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500">
+          <div className="grid grid-cols-7 gap-1 text-center text-xs text-gray-500 dark:text-gray-400">
             {daysOfWeek.map(day => <div key={day} className="font-medium">{day}</div>)}
           </div>
           <div className="grid grid-cols-7 gap-1 mt-1">
@@ -128,23 +136,23 @@ const DatePicker: React.FC<DatePickerProps> = ({ selectedDate, onChange }) => {
                 let dayClasses = "w-9 h-9 flex items-center justify-center rounded-full text-sm ";
 
                 if (isFuture) {
-                    dayClasses += "text-gray-300 cursor-not-allowed";
+                    dayClasses += "text-gray-300 dark:text-gray-600 cursor-not-allowed";
                 } else if(isSelected) {
                     dayClasses += "bg-kimi-green text-white font-bold hover:bg-kimi-green-dark cursor-pointer";
                 } else if (isToday) {
-                    dayClasses += "bg-gray-100 text-kimi-green font-bold hover:bg-gray-200 cursor-pointer";
+                    dayClasses += "bg-gray-100 dark:bg-gray-700 text-kimi-green dark:text-green-400 font-bold hover:bg-gray-200 dark:hover:bg-gray-600 cursor-pointer";
                 } else {
-                    dayClasses += "text-gray-700 hover:bg-gray-100 cursor-pointer";
+                    dayClasses += "text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer";
                 }
 
                 return (
                     <button 
                         key={day} 
-                        onClick={() => handleDateSelect(day)} 
+                        onClick={() => !isFuture && handleDateSelect(day)} 
                         className={dayClasses}
                         type="button"
                         disabled={isFuture}
-                        aria-label={`Seleccionar ${day} de ${displayDate.toLocaleString('es-ES', { month: 'long'})}`}
+                        aria-label={`Seleccionar ${day} de ${displayDate.toLocaleString(locale, { month: 'long'})}`}
                         aria-pressed={isSelected ? 'true' : 'false'}
                         aria-disabled={isFuture ? 'true' : 'false'}
                     >
